@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buku Tamu — Sudin Pendidikan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --paper: #F7F4EC;
+    --paper-raised: #FFFEFB;
+    --ink: #1C3450;
+    --ink-soft: #3C557A;
+    --brass: #A87C3F;
+    --brass-soft: #E4D4B8;
+    --sage: #4F7358;
+    --sage-bg: #E7EEE5;
+    --rust: #A94A2C;
+    --rust-bg: #F3E3DC;
+    --line: #D9D2C2;
+    --text: #2B2A26;
+    --text-mute: #756F60;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+  .hidden{display:none !important;}
+  button{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:500;
+    font-size:14px;
+    border:none;
+    cursor:pointer;
+    padding:10px 18px;
+    border-radius:2px;
+  }
+  .btn-primary{background:var(--ink); color:var(--paper);}
+  .btn-primary:hover{background:var(--ink-soft);}
+  .btn-ghost{background:transparent; color:var(--text-mute); border:1px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--ink);}
+
+  /* ============= SHARED FORM FIELD STYLES ============= */
+  .field{display:flex; flex-direction:column; gap:6px; margin-bottom:14px;}
+  .field label{font-size:12.5px; color:var(--text-mute); font-weight:500;}
+  .field input, .field select, .field textarea{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14.5px;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--text);
+    border-radius:2px;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:2px solid var(--ink-soft);
+    outline-offset:1px;
+    border-color:var(--ink-soft);
+  }
+  .field textarea{resize:vertical; min-height:44px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px 18px;}
+  @media (max-width:600px){ .grid2{grid-template-columns:1fr;} }
+  .subgroup-label{
+    font-size:12.5px; color:var(--text-mute); font-weight:500;
+    border-top:1px dashed var(--line); padding-top:14px; margin:4px 0 14px;
+  }
+  .subgroup-label span{font-weight:400;}
+
+  /* ============= TAMU VIEW ============= */
+  #tamuView{
+    max-width:520px; margin:0 auto; padding:36px 20px 60px;
+  }
+  .tamu-header{text-align:center; margin-bottom:28px;}
+  .tamu-header .seal{
+    width:48px; height:48px; border-radius:50%; border:2px solid var(--brass);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces', serif; font-weight:600; color:var(--brass); font-size:19px;
+    margin:0 auto 12px;
+  }
+  .tamu-header h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size:22px; margin:0 0 6px; color:var(--ink);
+  }
+  .tamu-header p{font-size:13.5px; color:var(--text-mute); margin:0; line-height:1.5;}
+
+  .tamu-panel{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-left:3px solid var(--brass);
+    padding:24px 22px;
+  }
+
+  .tamu-confirm{
+    text-align:center;
+    padding:20px 10px;
+  }
+  .tamu-confirm .checkmark{
+    width:56px; height:56px; border-radius:50%;
+    background:var(--sage-bg); color:var(--sage);
+    display:flex; align-items:center; justify-content:center;
+    font-size:28px; margin:0 auto 16px;
+  }
+  .queue-number{
+    font-family:'Fraunces', serif;
+    font-size:52px;
+    color:var(--ink);
+    line-height:1;
+    margin:14px 0 6px;
+  }
+  .queue-label{font-size:12.5px; color:var(--text-mute); margin-bottom:20px;}
+  .tamu-confirm h2{
+    font-family:'Fraunces', serif; font-size:20px; color:var(--ink); margin:0 0 8px;
+  }
+  .tamu-confirm p{font-size:14px; color:var(--text-mute); line-height:1.6; margin:0 0 22px;}
+
+  /* ============= PETUGAS VIEW ============= */
+  #petugasView{ max-width:920px; margin:0 auto; padding:28px 20px 80px; }
+
+  header.letterhead{
+    border-bottom:2px solid var(--ink);
+    padding-bottom:18px; margin-bottom:24px;
+    display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap;
+  }
+  .brandmark{display:flex; align-items:center; gap:14px;}
+  .seal{
+    width:46px; height:46px; border-radius:50%; border:2px solid var(--brass);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces', serif; font-weight:600; color:var(--brass); font-size:18px; flex-shrink:0;
+  }
+  h1{font-family:'Fraunces', serif; font-weight:600; font-size:26px; margin:0; color:var(--ink); line-height:1.15;}
+  .subtitle{font-size:13.5px; color:var(--text-mute); margin-top:3px;}
+  .today-block{text-align:right;}
+  .today-date{font-family:'Fraunces', serif; font-size:15px; color:var(--ink);}
+  .today-clock{font-family:'IBM Plex Mono', monospace; font-size:20px; color:var(--brass); margin-top:2px;}
+
+  .stats{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+    background:var(--line); border:1px solid var(--line); margin-bottom:24px;
+  }
+  .stat{background:var(--paper-raised); padding:16px 18px;}
+  .stat-num{font-family:'Fraunces', serif; font-size:30px; color:var(--ink); line-height:1;}
+  .stat-label{font-size:12.5px; color:var(--text-mute); margin-top:6px;}
+
+  .qr-panel{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-left:3px solid var(--brass);
+    padding:20px 22px;
+    margin-bottom:28px;
+    display:flex;
+    gap:20px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .qr-panel #qrCode{
+    width:120px; height:120px;
+    border:1px solid var(--line);
+    background:#fff;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .qr-panel-text{flex:1; min-width:220px;}
+  .qr-panel-text .title{
+    font-family:'Fraunces', serif; font-size:17px; color:var(--ink); margin-bottom:6px;
+  }
+  .qr-panel-text p{font-size:13.5px; color:var(--text-mute); margin:0 0 10px; line-height:1.5;}
+  .qr-link{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    background:var(--paper);
+    border:1px solid var(--line);
+    padding:6px 8px;
+    display:inline-block;
+    word-break:break-all;
+    border-radius:2px;
+  }
+
+  .section-title{
+    font-family:'Fraunces', serif; font-size:18px; color:var(--ink);
+    margin:0 0 14px; display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  }
+  .section-title .hint{font-size:12.5px; color:var(--text-mute); font-family:'IBM Plex Sans', sans-serif; font-weight:400;}
+
+  .manual-toggle{
+    font-size:13px; color:var(--ink-soft); background:none; border:none; text-decoration:underline;
+    cursor:pointer; padding:0; margin-bottom:20px;
+  }
+  .form-panel{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-left:3px solid var(--ink-soft);
+    padding:22px 22px 20px;
+    margin-bottom:24px;
+  }
+  .form-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:4px;}
+
+  .filter-row{display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;}
+  .filter-row input[type="date"], .filter-row input[type="text"]{
+    font-family:'IBM Plex Sans', sans-serif; font-size:13.5px; padding:7px 9px;
+    border:1px solid var(--line); background:var(--paper-raised); border-radius:2px;
+  }
+  .filter-row input[type="text"]{flex:1; min-width:160px;}
+
+  .ledger{border-top:2px solid var(--ink);}
+  .entry{
+    display:grid; grid-template-columns:70px 1fr auto; gap:14px;
+    padding:14px 4px; border-bottom:1px solid var(--line); align-items:start;
+  }
+  @media (max-width:600px){ .entry{grid-template-columns:1fr; gap:6px;} }
+  .entry-time{font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text-mute); padding-top:2px;}
+  .entry-main .name{font-weight:600; font-size:15px; color:var(--ink);}
+  .entry-main .meta{font-size:13px; color:var(--text-mute); margin-top:2px; line-height:1.5;}
+  .entry-main .meta b{color:var(--text); font-weight:500;}
+  .tag{display:inline-block; font-size:11.5px; font-weight:500; padding:2px 8px; border-radius:2px; margin-right:6px;}
+  .tag-masuk{background:var(--sage-bg); color:var(--sage);}
+  .tag-keluar{background:var(--rust-bg); color:var(--rust);}
+  .tag-dokumen{background:var(--brass-soft); color:var(--brass);}
+  .tag-lain{background:#E7E4DC; color:var(--text-mute);}
+
+  .entry-status{display:flex; flex-direction:column; align-items:flex-end; gap:6px; min-width:150px;}
+  @media (max-width:600px){ .entry-status{align-items:flex-start;} }
+  .status-pill{font-size:12px; font-weight:500; padding:4px 10px; border-radius:2px;}
+  .status-berlangsung{background:var(--rust-bg); color:var(--rust);}
+  .status-selesai{background:var(--sage-bg); color:var(--sage);}
+  .btn-selesai{background:transparent; border:1px solid var(--sage); color:var(--sage); font-size:12px; padding:5px 10px;}
+  .btn-selesai:hover{background:var(--sage); color:#fff;}
+  .jam-keluar{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-mute);}
+  .petugas-input{
+    font-family:'IBM Plex Sans', sans-serif; font-size:12.5px; padding:5px 7px;
+    border:1px solid var(--line); border-radius:2px; width:130px; background:var(--paper);
+  }
+  .petugas-input::placeholder{color:#A8A190;}
+
+  .empty-state{padding:40px 10px; text-align:center; color:var(--text-mute); font-size:14px;}
+  .empty-state .big{font-family:'Fraunces', serif; font-size:19px; color:var(--ink); margin-bottom:6px;}
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(10px);
+    background:var(--ink); color:var(--paper); padding:10px 20px; border-radius:3px; font-size:13.5px;
+    opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .footnote{margin-top:36px; font-size:12px; color:var(--text-mute); text-align:center;}
+</style>
+</head>
+<body>
+
+<!-- ======================= TAMPILAN TAMU ======================= -->
+<div id="tamuView" class="hidden">
+  <div class="tamu-header">
+    <div class="seal">SP</div>
+    <h1>Selamat datang</h1>
+    <p>Silakan isi data kehadiran Anda sebelum menunggu dipanggil petugas.</p>
+  </div>
+
+  <div class="tamu-panel">
+    <form id="tamuForm">
+      <div class="field">
+        <label for="t_nama">Nama lengkap</label>
+        <input type="text" id="t_nama" required placeholder="Nama Anda">
+      </div>
+      <div class="field">
+        <label for="t_hp">Nomor HP</label>
+        <input type="text" id="t_hp" placeholder="08xxxxxxxxxx">
+      </div>
+      <div class="field">
+        <label for="t_asalInstansi">Asal / instansi</label>
+        <input type="text" id="t_asalInstansi" placeholder="Nama sekolah, orang tua siswa, atau instansi">
+      </div>
+      <div class="field">
+        <label for="t_tujuan">Keperluan kunjungan</label>
+        <select id="t_tujuan">
+          <option value="Mutasi Masuk">Mutasi masuk siswa</option>
+          <option value="Mutasi Keluar">Mutasi keluar siswa</option>
+          <option value="Legalisir Dokumen">Legalisir dokumen</option>
+          <option value="Pengambilan Berkas">Pengambilan berkas</option>
+          <option value="Pengaduan">Pengaduan / keluhan</option>
+          <option value="Konsultasi">Konsultasi</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+      </div>
+
+      <div id="t_siswaGroup" class="hidden">
+        <div class="subgroup-label">Detail siswa <span>(khusus urusan mutasi)</span></div>
+        <div class="field">
+          <label for="t_namaSiswa">Nama siswa yang diurus</label>
+          <input type="text" id="t_namaSiswa" placeholder="Nama siswa">
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="t_sekolahAsal">Sekolah asal</label>
+            <input type="text" id="t_sekolahAsal" placeholder="Sekolah asal siswa">
+          </div>
+          <div class="field">
+            <label for="t_sekolahTujuan">Sekolah tujuan</label>
+            <input type="text" id="t_sekolahTujuan" placeholder="Sekolah tujuan siswa">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="t_keterangan">Keterangan tambahan (opsional)</label>
+        <textarea id="t_keterangan" placeholder="Hal lain yang perlu diketahui petugas"></textarea>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">Catat kehadiran saya</button>
+    </form>
+
+    <div id="tamuConfirm" class="tamu-confirm hidden">
+      <div class="checkmark">✓</div>
+      <h2>Kehadiran tercatat</h2>
+      <p>Terima kasih, <span id="confirmNama"></span>. Silakan duduk dan tunggu nama Anda dipanggil petugas.</p>
+      <button type="button" class="btn-ghost" id="btnIsiLagi">Isi untuk tamu lain</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= TAMPILAN PETUGAS ======================= -->
+<div id="petugasView" class="hidden">
+  <header class="letterhead">
+    <div class="brandmark">
+      <div class="seal">SP</div>
+      <div>
+        <h1>Buku Tamu Sudin Pendidikan</h1>
+        <div class="subtitle">Dasbor petugas — pemantauan kehadiran tamu</div>
+      </div>
+    </div>
+    <div class="today-block">
+      <div class="today-date" id="todayDate">—</div>
+      <div class="today-clock" id="todayClock">--:--</div>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Tamu hari ini</div></div>
+    <div class="stat"><div class="stat-num" id="statOngoing">0</div><div class="stat-label">Sedang dilayani</div></div>
+    <div class="stat"><div class="stat-num" id="statDone">0</div><div class="stat-label">Selesai dilayani</div></div>
+  </div>
+
+  <div class="section-title">
+    Daftar Kehadiran
+    <span class="hint" id="listCountHint"></span>
+  </div>
+
+  <div class="filter-row">
+    <input type="date" id="filterDate">
+    <input type="text" id="filterSearch" placeholder="Cari nama tamu, siswa, atau sekolah...">
+    <button type="button" class="btn-ghost" id="btnToday">Hari ini</button>
+  </div>
+
+  <div class="ledger" id="ledgerList"></div>
+
+  <div class="footnote">Data tersimpan otomatis dan dibagikan ke semua petugas yang membuka dasbor ini.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+// GANTI baris di bawah ini dengan endpoint resource MockAPI kamu, contoh:
+// const MOCKAPI_URL = 'https://65f1a2b3c4d5e6f7.mockapi.io/api/v1/tamu';
+const MOCKAPI_URL = 'https://6a97cdc20e3240db9062148f.mockapi.io/tamu';
+
+let guests = [];
+
+function pad(n){ return n.toString().padStart(2,'0'); }
+function fmtDate(d){ return d.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' }); }
+function fmtTime(d){ return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function isoDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function escapeHtml(str){
+  return (str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function showToast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+function tagClass(tujuan){
+  if(tujuan === 'Mutasi Masuk') return 'tag-masuk';
+  if(tujuan === 'Mutasi Keluar') return 'tag-keluar';
+  if(tujuan === 'Legalisir Dokumen' || tujuan === 'Pengambilan Berkas') return 'tag-dokumen';
+  return 'tag-lain';
+}
+function isMutasi(tujuan){ return tujuan === 'Mutasi Masuk' || tujuan === 'Mutasi Keluar'; }
+
+/* ============ MOCKAPI HELPERS ============ */
+async function apiList(){
+  try{
+    const res = await fetch(MOCKAPI_URL);
+    if(!res.ok) throw new Error('Gagal mengambil data');
+    return await res.json();
+  }catch(e){
+    showToast('Gagal memuat data dari server.');
+    return [];
+  }
+}
+async function apiCreate(entry){
+  const res = await fetch(MOCKAPI_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(entry)
+  });
+  if(!res.ok) throw new Error('Gagal menyimpan data');
+  return await res.json();
+}
+async function apiUpdate(id, patch){
+  const res = await fetch(MOCKAPI_URL + '/' + id, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(patch)
+  });
+  if(!res.ok) throw new Error('Gagal memperbarui data');
+  return await res.json();
+}
+
+/* ============ ROUTING ============ */
+const params = new URLSearchParams(window.location.search);
+const mode = params.get('mode') === 'tamu' ? 'tamu' : 'petugas';
+
+if(mode === 'tamu'){
+  initTamuView();
+}else{
+  initPetugasView();
+}
+
+/* ============ TAMU VIEW ============ */
+function initTamuView(){
+  $('tamuView').classList.remove('hidden');
+
+  $('t_tujuan').addEventListener('change', () => {
+    $('t_siswaGroup').classList.toggle('hidden', !isMutasi($('t_tujuan').value));
+  });
+
+  $('tamuForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nama = $('t_nama').value.trim();
+    if(!nama) return;
+
+    const entry = {
+      nama,
+      hp: $('t_hp').value.trim(),
+      asalInstansi: $('t_asalInstansi').value.trim(),
+      tujuan: $('t_tujuan').value,
+      namaSiswa: $('t_namaSiswa').value.trim(),
+      petugas: '',
+      sekolahAsal: $('t_sekolahAsal').value.trim(),
+      sekolahTujuan: $('t_sekolahTujuan').value.trim(),
+      keterangan: $('t_keterangan').value.trim(),
+      datang: new Date().toISOString(),
+      keluar: null,
+      selesai: false
+    };
+
+    try{
+      await apiCreate(entry);
+      $('confirmNama').textContent = nama;
+      $('tamuForm').classList.add('hidden');
+      $('tamuConfirm').classList.remove('hidden');
+    }catch(err){
+      showToast('Gagal mengirim data, coba lagi.');
+    }
+  });
+
+  $('btnIsiLagi').addEventListener('click', () => {
+    $('tamuForm').reset();
+    $('t_siswaGroup').classList.add('hidden');
+    $('tamuForm').classList.remove('hidden');
+    $('tamuConfirm').classList.add('hidden');
+  });
+}
+
+/* ============ PETUGAS VIEW ============ */
+function initPetugasView(){
+  $('petugasView').classList.remove('hidden');
+
+  function tickClock(){
+    const now = new Date();
+    $('todayDate').textContent = fmtDate(now);
+    $('todayClock').textContent = fmtTime(now);
+  }
+  tickClock();
+  setInterval(tickClock, 1000*10);
+
+  $('btnManualToggle') && $('btnManualToggle').addEventListener('click', () => {
+    $('manualPanel').classList.toggle('hidden');
+  });
+
+  function render(){
+    const filterDate = $('filterDate').value;
+    const search = $('filterSearch').value.trim().toLowerCase();
+    const todayIso = isoDate(new Date());
+    const activeDate = filterDate || todayIso;
+
+    let filtered = guests.filter(g => isoDate(new Date(g.datang)) === activeDate);
+    if(search){
+      filtered = filtered.filter(g =>
+        (g.nama||'').toLowerCase().includes(search) ||
+        (g.namaSiswa||'').toLowerCase().includes(search) ||
+        (g.sekolahAsal||'').toLowerCase().includes(search) ||
+        (g.sekolahTujuan||'').toLowerCase().includes(search) ||
+        (g.asalInstansi||'').toLowerCase().includes(search)
+      );
+    }
+    filtered.sort((a,b) => new Date(a.datang) - new Date(b.datang));
+
+    const todaysGuests = guests.filter(g => isoDate(new Date(g.datang)) === todayIso);
+    $('statTotal').textContent = todaysGuests.length;
+    $('statOngoing').textContent = todaysGuests.filter(g => !g.selesai).length;
+    $('statDone').textContent = todaysGuests.filter(g => g.selesai).length;
+
+    $('listCountHint').textContent = filtered.length + ' entri — ' + (filterDate ? new Date(filterDate).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : 'hari ini');
+
+    const container = $('ledgerList');
+    container.innerHTML = '';
+
+    if(filtered.length === 0){
+      container.innerHTML = `<div class="empty-state"><div class="big">Belum ada tamu tercatat</div>Data akan muncul di sini setelah tamu mengisi formulir kehadiran.</div>`;
+      return;
+    }
+
+    filtered.forEach((g, idx) => {
+      const el = document.createElement('div');
+      el.className = 'entry';
+      const datangDate = new Date(g.datang);
+      const keluarStr = g.keluar ? fmtTime(new Date(g.keluar)) : null;
+
+      el.innerHTML = `
+        <div class="entry-time">${fmtTime(datangDate)}</div>
+        <div class="entry-main">
+          <div class="name">#${idx+1} ${escapeHtml(g.nama)}</div>
+          <div class="meta">
+            <span class="tag ${tagClass(g.tujuan)}">${escapeHtml(g.tujuan)}</span>
+            ${g.asalInstansi ? `<b>Asal tamu:</b> ${escapeHtml(g.asalInstansi)} &nbsp;` : ''}
+            ${g.hp ? `<b>HP:</b> ${escapeHtml(g.hp)}` : ''}
+            ${(g.namaSiswa || g.sekolahAsal || g.sekolahTujuan) ? '<br>' : ''}
+            ${g.namaSiswa ? `<b>Siswa:</b> ${escapeHtml(g.namaSiswa)} &nbsp;` : ''}
+            ${g.sekolahAsal ? `<b>Dari:</b> ${escapeHtml(g.sekolahAsal)} ` : ''}
+            ${g.sekolahTujuan ? `<b>Ke:</b> ${escapeHtml(g.sekolahTujuan)}` : ''}
+            ${g.keterangan ? `<br><b>Ket:</b> ${escapeHtml(g.keterangan)}` : ''}
+          </div>
+        </div>
+        <div class="entry-status">
+          ${g.selesai
+            ? `<span class="status-pill status-selesai">Selesai</span><span class="jam-keluar">Keluar ${keluarStr}</span>${g.petugas ? `<span class="jam-keluar">oleh ${escapeHtml(g.petugas)}</span>` : ''}`
+            : `<span class="status-pill status-berlangsung">Sedang dilayani</span>
+               <input class="petugas-input" data-id="${g.id}" placeholder="Nama petugas" value="${escapeHtml(g.petugas)}">
+               <button class="btn-selesai" data-id="${g.id}">Tandai selesai</button>`
+          }
+        </div>
+      `;
+      container.appendChild(el);
+    });
+
+    container.querySelectorAll('.petugas-input').forEach(inp => {
+      inp.addEventListener('change', async () => {
+        const g = guests.find(x => x.id === inp.getAttribute('data-id'));
+        if(g){
+          g.petugas = inp.value.trim();
+          try{ await apiUpdate(g.id, {petugas: g.petugas}); }
+          catch(err){ showToast('Gagal menyimpan nama petugas.'); }
+        }
+      });
+    });
+
+    container.querySelectorAll('.btn-selesai').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        const g = guests.find(x => x.id === id);
+        if(g){
+          const petugasInput = container.querySelector(`.petugas-input[data-id="${id}"]`);
+          if(petugasInput) g.petugas = petugasInput.value.trim();
+          g.selesai = true;
+          g.keluar = new Date().toISOString();
+          try{
+            await apiUpdate(id, {petugas: g.petugas, selesai: true, keluar: g.keluar});
+            render();
+            showToast('Tamu ditandai selesai dilayani.');
+          }catch(err){
+            showToast('Gagal memperbarui status.');
+          }
+        }
+      });
+    });
+  }
+
+  $('filterDate').addEventListener('change', render);
+  $('filterSearch').addEventListener('input', render);
+  $('btnToday').addEventListener('click', () => { $('filterDate').value=''; render(); });
+
+  async function refresh(){
+    guests = await apiList();
+    render();
+  }
+
+  refresh();
+  setInterval(refresh, 8000);
+}
+</script>
+</body>
+</html>
