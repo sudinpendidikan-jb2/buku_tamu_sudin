@@ -838,6 +838,7 @@ function initPetugasView(){
       const el = document.createElement('div');
       el.className = 'entry';
       const keluarStr = g.keluar ? fmtTime(new Date(g.keluar)) : null;
+      const masukStr = g.datang ? fmtTime(new Date(g.datang)) : null;
 
       el.innerHTML = `
         <div class="entry-main">
@@ -855,8 +856,9 @@ function initPetugasView(){
         </div>
         <div class="entry-status">
           ${g.selesai
-            ? `<span class="status-pill status-selesai">Selesai</span><span class="jam-keluar">Keluar ${keluarStr}</span>${g.petugas ? `<span class="jam-keluar">oleh ${escapeHtml(g.petugas)}</span>` : ''}`
+            ? `<span class="status-pill status-selesai">Selesai</span><span class="jam-keluar">Masuk ${masukStr} / Keluar ${keluarStr}</span>${g.petugas ? `<span class="jam-keluar">oleh ${escapeHtml(g.petugas)}</span>` : ''}`
             : `<span class="status-pill status-berlangsung">Sedang dilayani</span>
+               <span class="jam-keluar">Masuk ${masukStr}</span>
                <input class="petugas-input" data-id="${g.id}" placeholder="Nama petugas" value="${escapeHtml(g.petugas)}">
                <button class="btn-selesai" data-id="${g.id}">Tandai selesai</button>`
           }
