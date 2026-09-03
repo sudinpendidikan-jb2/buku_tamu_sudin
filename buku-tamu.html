@@ -474,9 +474,8 @@
 const $ = (id) => document.getElementById(id);
 
 // GANTI baris di bawah ini dengan endpoint resource MockAPI kamu, contoh:
-// const MOCKAPI_URL = 'https://65f1a2b3c4d5e6f7.mockapi.io/api/v1/tamu';
-const MOCKAPI_URL = 'https://6a97cdc20e3240db9062148f.mockapi.io/tamu';
-const PETUGAS_API_URL = 'https://6a97cdc20e3240db9062148f.mockapi.io/petugas';
+const MOCKAPI_URL = 'https://black-butterfly-59f6.sudinpendidikan-jb2.workers.dev/tamu';
+const PETUGAS_API_URL = 'https://black-butterfly-59f6.sudinpendidikan-jb2.workers.dev/petugas';
 
 let guests = [];
 
@@ -498,6 +497,13 @@ function tagClass(tujuan){
   return 'tag-lain';
 }
 function isMutasi(tujuan){ return tujuan === 'Mutasi Masuk' || tujuan === 'Mutasi Keluar'; }
+
+async function hashPassword(nip, password){
+  const enc = new TextEncoder();
+  const data = enc.encode('sudin-salt::' + nip + '::' + password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
 
 /* ============ MOCKAPI HELPERS ============ */
 async function apiList(){
@@ -612,7 +618,8 @@ function initPetugasGate(){
       const res = await fetch(PETUGAS_API_URL);
       if(!res.ok) throw new Error('gagal fetch');
       const list = await res.json();
-      const match = list.find(p => String(p.nip).trim() === nip && String(p.password) === password && String(p.jenis || 'pns') === jenis);
+      const passwordHash = await hashPassword(nip, password);
+      const match = list.find(p => String(p.nip).trim() === nip && String(p.password) === passwordHash && String(p.jenis || 'pns') === jenis);
       if(match){
         sessionStorage.setItem(SESSION_KEY, JSON.stringify({nama: match.nama || nip}));
         $('petugasLogin').classList.add('hidden');
@@ -664,7 +671,7 @@ function initPetugasGate(){
       const created = await fetch(PETUGAS_API_URL, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({nip, nama, password, jenis})
+        body: JSON.stringify({nip, nama, password: await hashPassword(nip, password), jenis})
       });
       if(!created.ok) throw new Error('gagal daftar');
 
