@@ -521,14 +521,14 @@ async function apiUpdate(id, patch){
 const params = new URLSearchParams(window.location.search);
 const mode = params.get('mode') === 'tamu' ? 'tamu' : 'petugas';
 
+/* ============ GERBANG LOGIN PETUGAS ============ */
+const SESSION_KEY = 'petugasSession';
+
 if(mode === 'tamu'){
   initTamuView();
 }else{
   initPetugasGate();
 }
-
-/* ============ GERBANG LOGIN PETUGAS ============ */
-const SESSION_KEY = 'petugasSession';
 
 function initPetugasGate(){
   const session = sessionStorage.getItem(SESSION_KEY);
