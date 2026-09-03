@@ -297,6 +297,7 @@
   .btn-selesai{background:transparent; border:1px solid var(--sage); color:var(--sage); font-size:12px; padding:5px 10px;}
   .btn-selesai:hover{background:var(--sage); color:#fff;}
   .jam-keluar{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-mute);}
+  .jam-masuk{font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:400; color:var(--text-mute); margin-left:4px;}
   .petugas-input{
     font-family:'IBM Plex Sans', sans-serif; font-size:12.5px; padding:5px 7px;
     border:1px solid var(--line); border-radius:2px; width:130px; background:var(--paper);
@@ -373,6 +374,10 @@
       <div class="field">
         <label for="t_keterangan">Keterangan tambahan (opsional)</label>
         <textarea id="t_keterangan" placeholder="Hal lain yang perlu diketahui petugas"></textarea>
+      </div>
+      <div class="field">
+        <label for="t_jamMasuk">Jam masuk</label>
+        <input type="time" id="t_jamMasuk">
       </div>
       <button type="submit" class="btn-primary" style="width:100%;">Catat kehadiran saya</button>
     </form>
@@ -743,6 +748,14 @@ $('btnLogout') && $('btnLogout').addEventListener('click', () => {
 function initTamuView(){
   $('tamuView').classList.remove('hidden');
 
+  function setDefaultJamMasuk(){
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    $('t_jamMasuk').value = `${hh}:${mm}`;
+  }
+  setDefaultJamMasuk();
+
   $('t_tujuan').addEventListener('change', () => {
     $('t_siswaGroup').classList.toggle('hidden', !isMutasi($('t_tujuan').value));
   });
@@ -751,6 +764,13 @@ function initTamuView(){
     e.preventDefault();
     const nama = $('t_nama').value.trim();
     if(!nama) return;
+
+    const jamMasuk = $('t_jamMasuk').value;
+    const datangDate = new Date();
+    if(jamMasuk){
+      const [hh, mm] = jamMasuk.split(':').map(Number);
+      datangDate.setHours(hh, mm, 0, 0);
+    }
 
     const entry = {
       nama,
@@ -762,7 +782,7 @@ function initTamuView(){
       sekolahAsal: $('t_sekolahAsal').value.trim(),
       sekolahTujuan: $('t_sekolahTujuan').value.trim(),
       keterangan: $('t_keterangan').value.trim(),
-      datang: new Date().toISOString(),
+      datang: datangDate.toISOString(),
       keluar: null,
       selesai: false
     };
@@ -780,6 +800,7 @@ function initTamuView(){
   $('btnIsiLagi').addEventListener('click', () => {
     $('tamuForm').reset();
     $('t_siswaGroup').classList.add('hidden');
+    setDefaultJamMasuk();
     $('tamuForm').classList.remove('hidden');
     $('tamuConfirm').classList.add('hidden');
   });
@@ -842,7 +863,7 @@ function initPetugasView(){
 
       el.innerHTML = `
         <div class="entry-main">
-          <div class="name">#${idx+1} ${escapeHtml(g.nama)}</div>
+          <div class="name">#${idx+1} ${escapeHtml(g.nama)} <span class="jam-masuk">Masuk ${masukStr}</span></div>
           <div class="meta">
             <span class="tag ${tagClass(g.tujuan)}">${escapeHtml(g.tujuan)}</span>
             ${g.asalInstansi ? `<b>Instansi:</b> ${escapeHtml(g.asalInstansi)} &nbsp;` : ''}
@@ -856,9 +877,8 @@ function initPetugasView(){
         </div>
         <div class="entry-status">
           ${g.selesai
-            ? `<span class="status-pill status-selesai">Selesai</span><span class="jam-keluar">Masuk ${masukStr} / Keluar ${keluarStr}</span>${g.petugas ? `<span class="jam-keluar">oleh ${escapeHtml(g.petugas)}</span>` : ''}`
+            ? `<span class="status-pill status-selesai">Selesai</span><span class="jam-keluar">Keluar ${keluarStr}</span>${g.petugas ? `<span class="jam-keluar">oleh ${escapeHtml(g.petugas)}</span>` : ''}`
             : `<span class="status-pill status-berlangsung">Sedang dilayani</span>
-               <span class="jam-keluar">Masuk ${masukStr}</span>
                <input class="petugas-input" data-id="${g.id}" placeholder="Nama petugas" value="${escapeHtml(g.petugas)}">
                <button class="btn-selesai" data-id="${g.id}">Tandai selesai</button>`
           }
