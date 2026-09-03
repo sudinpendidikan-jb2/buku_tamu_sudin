@@ -395,8 +395,15 @@
 
     <form id="registerForm" class="hidden">
       <div class="field">
-        <label for="regNip">NIP (Nomor Induk Pegawai)</label>
-        <input type="text" id="regNip" required placeholder="Wajib diisi, tanpa NIP tidak bisa daftar">
+        <label for="regJenis">Status kepegawaian</label>
+        <select id="regJenis">
+          <option value="pns">PNS</option>
+          <option value="staff">Staf (Non-PNS)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="regNip" id="regNipLabel">NIP (Nomor Induk Pegawai)</label>
+        <input type="text" id="regNip" required inputmode="numeric" maxlength="18" pattern="\d{18}" placeholder="18 digit angka, tanpa spasi/tanda baca">
       </div>
       <div class="field">
         <label for="regNama">Nama lengkap</label>
@@ -561,6 +568,21 @@ function initPetugasGate(){
   $('btnShowRegister').addEventListener('click', switchToRegister);
   $('btnShowLogin').addEventListener('click', switchToLogin);
 
+  $('regJenis').addEventListener('change', () => {
+    const jenis = $('regJenis').value;
+    const nipInput = $('regNip');
+    if(jenis === 'pns'){
+      $('regNipLabel').textContent = 'NIP (Nomor Induk Pegawai)';
+      nipInput.placeholder = '18 digit angka, tanpa spasi/tanda baca';
+      nipInput.setAttribute('maxlength', '18');
+    }else{
+      $('regNipLabel').textContent = 'ID Pegawai / NIP Non-PNS';
+      nipInput.placeholder = 'Nomor identitas kepegawaian';
+      nipInput.removeAttribute('maxlength');
+    }
+    nipInput.value = '';
+  });
+
   $('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const nip = $('loginNip').value.trim();
@@ -588,13 +610,24 @@ function initPetugasGate(){
 
   $('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const jenis = $('regJenis').value;
     const nip = $('regNip').value.trim();
     const nama = $('regNama').value.trim();
     const password = $('regPassword').value;
     $('loginError').classList.add('hidden');
 
     if(!nip){
-      $('loginError').textContent = 'NIP wajib diisi untuk mendaftar.';
+      $('loginError').textContent = jenis === 'pns' ? 'NIP wajib diisi untuk mendaftar.' : 'ID Pegawai wajib diisi untuk mendaftar.';
+      $('loginError').classList.remove('hidden');
+      return;
+    }
+    if(jenis === 'pns' && !/^\d{18}$/.test(nip)){
+      $('loginError').textContent = 'NIP harus berupa 18 digit angka sesuai format resmi NIP PNS.';
+      $('loginError').classList.remove('hidden');
+      return;
+    }
+    if(jenis === 'staff' && nip.length < 3){
+      $('loginError').textContent = 'ID Pegawai terlalu pendek, mohon isi dengan benar.';
       $('loginError').classList.remove('hidden');
       return;
     }
@@ -612,7 +645,7 @@ function initPetugasGate(){
       const created = await fetch(PETUGAS_API_URL, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({nip, nama, password})
+        body: JSON.stringify({nip, nama, password, jenis})
       });
       if(!created.ok) throw new Error('gagal daftar');
 
