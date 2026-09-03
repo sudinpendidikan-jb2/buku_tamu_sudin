@@ -315,7 +315,7 @@
         <input type="text" id="t_hp" placeholder="08xxxxxxxxxx">
       </div>
       <div class="field">
-        <label for="t_asalInstansi">Asal / instansi</label>
+        <label for="t_asalInstansi">Instansi</label>
         <input type="text" id="t_asalInstansi" placeholder="Nama sekolah, orang tua siswa, atau instansi">
       </div>
       <div class="field">
@@ -378,7 +378,14 @@
 
     <form id="loginForm">
       <div class="field">
-        <label for="loginNip">NIP (Nomor Induk Pegawai)</label>
+        <label for="loginJenis">Status kepegawaian</label>
+        <select id="loginJenis">
+          <option value="pns">PNS</option>
+          <option value="staff">Staf (Non-PNS)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="loginNip" id="loginNipLabel">NIP (Nomor Induk Pegawai)</label>
         <input type="text" id="loginNip" required placeholder="Masukkan NIP">
       </div>
       <div class="field">
@@ -581,8 +588,22 @@ function initPetugasGate(){
     nipInput.value = '';
   });
 
+  $('loginJenis').addEventListener('change', () => {
+    const jenis = $('loginJenis').value;
+    const nipInput = $('loginNip');
+    if(jenis === 'pns'){
+      $('loginNipLabel').textContent = 'NIP (Nomor Induk Pegawai)';
+      nipInput.placeholder = 'Masukkan NIP (18 digit)';
+    }else{
+      $('loginNipLabel').textContent = 'ID Pegawai / NIP Non-PNS';
+      nipInput.placeholder = 'Masukkan ID Pegawai';
+    }
+    nipInput.value = '';
+  });
+
   $('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const jenis = $('loginJenis').value;
     const nip = $('loginNip').value.trim();
     const password = $('loginPassword').value;
     $('loginError').classList.add('hidden');
@@ -591,13 +612,13 @@ function initPetugasGate(){
       const res = await fetch(PETUGAS_API_URL);
       if(!res.ok) throw new Error('gagal fetch');
       const list = await res.json();
-      const match = list.find(p => String(p.nip).trim() === nip && String(p.password) === password);
+      const match = list.find(p => String(p.nip).trim() === nip && String(p.password) === password && String(p.jenis || 'pns') === jenis);
       if(match){
         sessionStorage.setItem(SESSION_KEY, JSON.stringify({nama: match.nama || nip}));
         $('petugasLogin').classList.add('hidden');
         showPetugasDashboard(match.nama || nip);
       }else{
-        $('loginError').textContent = 'NIP atau password salah, atau akun belum terdaftar. Silakan daftar dulu jika belum punya akun.';
+        $('loginError').textContent = 'NIP, password, atau status kepegawaian salah, atau akun belum terdaftar. Silakan daftar dulu jika belum punya akun.';
         $('loginError').classList.remove('hidden');
       }
     }catch(err){
@@ -774,7 +795,7 @@ function initPetugasView(){
           <div class="name">#${idx+1} ${escapeHtml(g.nama)}</div>
           <div class="meta">
             <span class="tag ${tagClass(g.tujuan)}">${escapeHtml(g.tujuan)}</span>
-            ${g.asalInstansi ? `<b>Asal tamu:</b> ${escapeHtml(g.asalInstansi)} &nbsp;` : ''}
+            ${g.asalInstansi ? `<b>Instansi:</b> ${escapeHtml(g.asalInstansi)} &nbsp;` : ''}
             ${g.hp ? `<b>HP:</b> ${escapeHtml(g.hp)}` : ''}
             ${(g.namaSiswa || g.sekolahAsal || g.sekolahTujuan) ? '<br>' : ''}
             ${g.namaSiswa ? `<b>Siswa:</b> ${escapeHtml(g.namaSiswa)} &nbsp;` : ''}
