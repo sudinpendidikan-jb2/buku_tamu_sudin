@@ -122,6 +122,47 @@
   }
   .tamu-confirm p{font-size:14px; color:var(--text-mute); line-height:1.6; margin:0 0 22px;}
 
+  /* ============= LOGIN PETUGAS ============= */
+  #petugasLogin{
+    max-width:380px; margin:0 auto; padding:60px 20px;
+  }
+  .login-header{text-align:center; margin-bottom:24px;}
+  .login-header .seal{
+    width:48px; height:48px; border-radius:50%; border:2px solid var(--brass);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces', serif; font-weight:600; color:var(--brass); font-size:19px;
+    margin:0 auto 12px;
+  }
+  .login-header h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size:21px; margin:0 0 4px; color:var(--ink);
+  }
+  .login-header p{font-size:13px; color:var(--text-mute); margin:0;}
+  .login-panel{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-left:3px solid var(--ink-soft);
+    padding:24px 22px;
+  }
+  .login-error{
+    font-size:13px; color:var(--rust); background:var(--rust-bg);
+    padding:8px 10px; border-radius:2px; margin-bottom:14px;
+  }
+  .logout-link{
+    font-size:12.5px; color:var(--text-mute); background:none; border:none;
+    text-decoration:underline; cursor:pointer; padding:0;
+  }
+  .auth-switch{
+    text-align:center; font-size:13px; color:var(--text-mute); margin-top:14px;
+  }
+  .auth-switch button{
+    background:none; border:none; color:var(--ink-soft); text-decoration:underline;
+    cursor:pointer; padding:0; font-size:13px; font-weight:500;
+  }
+  .login-success{
+    font-size:13px; color:var(--sage); background:var(--sage-bg);
+    padding:8px 10px; border-radius:2px; margin-bottom:14px;
+  }
+
   /* ============= PETUGAS VIEW ============= */
   #petugasView{ max-width:920px; margin:0 auto; padding:28px 20px 80px; }
 
@@ -326,6 +367,53 @@
   </div>
 </div>
 
+<!-- ======================= LOGIN PETUGAS ======================= -->
+<div id="petugasLogin" class="hidden">
+  <div class="login-header">
+    <div class="seal">SP</div>
+    <h1 id="authTitle">Login Petugas</h1>
+    <p id="authSubtitle">Masuk menggunakan NIP untuk mengakses dasbor kehadiran.</p>
+  </div>
+  <div class="login-panel">
+    <div id="loginError" class="login-error hidden"></div>
+    <div id="registerSuccess" class="login-success hidden"></div>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginNip">NIP (Nomor Induk Pegawai)</label>
+        <input type="text" id="loginNip" required placeholder="Masukkan NIP">
+      </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" required placeholder="Masukkan password">
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">Masuk</button>
+    </form>
+    <div class="auth-switch" id="toRegisterSwitch">
+      Belum punya akun? <button type="button" id="btnShowRegister">Daftar dengan NIP</button>
+    </div>
+
+    <form id="registerForm" class="hidden">
+      <div class="field">
+        <label for="regNip">NIP (Nomor Induk Pegawai)</label>
+        <input type="text" id="regNip" required placeholder="Wajib diisi, tanpa NIP tidak bisa daftar">
+      </div>
+      <div class="field">
+        <label for="regNama">Nama lengkap</label>
+        <input type="text" id="regNama" required placeholder="Nama Anda">
+      </div>
+      <div class="field">
+        <label for="regPassword">Buat password</label>
+        <input type="password" id="regPassword" required placeholder="Minimal 4 karakter">
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">Daftar Akun</button>
+    </form>
+    <div class="auth-switch hidden" id="toLoginSwitch">
+      Sudah punya akun? <button type="button" id="btnShowLogin">Login di sini</button>
+    </div>
+  </div>
+</div>
+
 <!-- ======================= TAMPILAN PETUGAS ======================= -->
 <div id="petugasView" class="hidden">
   <header class="letterhead">
@@ -339,6 +427,10 @@
     <div class="today-block">
       <div class="today-date" id="todayDate">—</div>
       <div class="today-clock" id="todayClock">--:--</div>
+      <div style="margin-top:6px;">
+        <span id="loggedInName" style="font-size:12.5px; color:var(--text-mute);"></span>
+        <button type="button" class="logout-link" id="btnLogout">Keluar</button>
+      </div>
     </div>
   </header>
 
@@ -372,6 +464,7 @@ const $ = (id) => document.getElementById(id);
 // GANTI baris di bawah ini dengan endpoint resource MockAPI kamu, contoh:
 // const MOCKAPI_URL = 'https://65f1a2b3c4d5e6f7.mockapi.io/api/v1/tamu';
 const MOCKAPI_URL = 'https://6a97cdc20e3240db9062148f.mockapi.io/tamu';
+const PETUGAS_API_URL = 'https://6a97cdc20e3240db9062148f.mockapi.io/petugas';
 
 let guests = [];
 
@@ -431,8 +524,117 @@ const mode = params.get('mode') === 'tamu' ? 'tamu' : 'petugas';
 if(mode === 'tamu'){
   initTamuView();
 }else{
+  initPetugasGate();
+}
+
+/* ============ GERBANG LOGIN PETUGAS ============ */
+const SESSION_KEY = 'petugasSession';
+
+function initPetugasGate(){
+  const session = sessionStorage.getItem(SESSION_KEY);
+  if(session){
+    const data = JSON.parse(session);
+    showPetugasDashboard(data.nama);
+    return;
+  }
+  $('petugasLogin').classList.remove('hidden');
+
+  function switchToRegister(){
+    $('loginForm').classList.add('hidden');
+    $('toRegisterSwitch').classList.add('hidden');
+    $('registerForm').classList.remove('hidden');
+    $('toLoginSwitch').classList.remove('hidden');
+    $('authTitle').textContent = 'Daftar Akun Petugas';
+    $('authSubtitle').textContent = 'Pendaftaran wajib menggunakan NIP. Tanpa NIP, akun tidak bisa dibuat.';
+    $('loginError').classList.add('hidden');
+    $('registerSuccess').classList.add('hidden');
+  }
+  function switchToLogin(){
+    $('registerForm').classList.add('hidden');
+    $('toLoginSwitch').classList.add('hidden');
+    $('loginForm').classList.remove('hidden');
+    $('toRegisterSwitch').classList.remove('hidden');
+    $('authTitle').textContent = 'Login Petugas';
+    $('authSubtitle').textContent = 'Masuk menggunakan NIP untuk mengakses dasbor kehadiran.';
+    $('loginError').classList.add('hidden');
+  }
+  $('btnShowRegister').addEventListener('click', switchToRegister);
+  $('btnShowLogin').addEventListener('click', switchToLogin);
+
+  $('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nip = $('loginNip').value.trim();
+    const password = $('loginPassword').value;
+    $('loginError').classList.add('hidden');
+
+    try{
+      const res = await fetch(PETUGAS_API_URL);
+      if(!res.ok) throw new Error('gagal fetch');
+      const list = await res.json();
+      const match = list.find(p => String(p.nip).trim() === nip && String(p.password) === password);
+      if(match){
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify({nama: match.nama || nip}));
+        $('petugasLogin').classList.add('hidden');
+        showPetugasDashboard(match.nama || nip);
+      }else{
+        $('loginError').textContent = 'NIP atau password salah, atau akun belum terdaftar. Silakan daftar dulu jika belum punya akun.';
+        $('loginError').classList.remove('hidden');
+      }
+    }catch(err){
+      $('loginError').textContent = 'Gagal menghubungi server, coba lagi.';
+      $('loginError').classList.remove('hidden');
+    }
+  });
+
+  $('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nip = $('regNip').value.trim();
+    const nama = $('regNama').value.trim();
+    const password = $('regPassword').value;
+    $('loginError').classList.add('hidden');
+
+    if(!nip){
+      $('loginError').textContent = 'NIP wajib diisi untuk mendaftar.';
+      $('loginError').classList.remove('hidden');
+      return;
+    }
+
+    try{
+      const res = await fetch(PETUGAS_API_URL);
+      const list = await res.json();
+      const exists = list.find(p => String(p.nip).trim() === nip);
+      if(exists){
+        $('loginError').textContent = 'NIP ini sudah terdaftar. Silakan login, bukan daftar ulang.';
+        $('loginError').classList.remove('hidden');
+        return;
+      }
+
+      const created = await fetch(PETUGAS_API_URL, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({nip, nama, password})
+      });
+      if(!created.ok) throw new Error('gagal daftar');
+
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({nama: nama || nip}));
+      $('petugasLogin').classList.add('hidden');
+      showPetugasDashboard(nama || nip);
+    }catch(err){
+      $('loginError').textContent = 'Gagal mendaftar, coba lagi.';
+      $('loginError').classList.remove('hidden');
+    }
+  });
+}
+
+function showPetugasDashboard(nama){
+  $('loggedInName').textContent = nama ? ('Login: ' + nama) : '';
   initPetugasView();
 }
+
+$('btnLogout') && $('btnLogout').addEventListener('click', () => {
+  sessionStorage.removeItem(SESSION_KEY);
+  window.location.reload();
+});
 
 /* ============ TAMU VIEW ============ */
 function initTamuView(){
